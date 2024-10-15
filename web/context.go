@@ -30,6 +30,7 @@ func (c *Context) SetHeader(key string, value string) {
 	c.Writer.Header().Set(key, value)
 }
 
+// notice that the status code must be set before Write and after SetHeader
 func (c *Context) Status(code int) {
 	c.StatusCode = code
 	c.Writer.WriteHeader(code)
@@ -47,12 +48,13 @@ func (c *Context) Data(code int, data []byte) {
 }
 
 func (c *Context) JSON(code int, obj any) {
-	c.SetHeader("Content-Type", "application/json")
-	c.Status(code)
 	encoder := json.NewEncoder(c.Writer)
 	if err := encoder.Encode(obj); err != nil {
 		http.Error(c.Writer, err.Error(), 500)
+		return
 	}
+	c.SetHeader("Content-Type", "application/json")
+	c.Status(code)
 }
 
 func (c *Context) HTML(code int, html string) {

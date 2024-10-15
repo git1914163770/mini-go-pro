@@ -48,17 +48,21 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	r.handlers[key] = handler
 }
 
+// getRoute eg. /p/:lang/doc 给 lang 赋值
+// 返回值*node表示带有pattern的节点
 func (r *router) getRoute(method string, path string) (*node, map[string]string) {
-	searchParts := parsePattern(path)
 	root, ok := r.roots[method]
 
 	if !ok {
 		return nil, nil
 	}
+	searchParts := parsePattern(path)
 	params := make(map[string]string)
+	
 	n := root.search(searchParts, 0)
 
 	if n != nil {
+		// 实际注册的路由
 		parts := parsePattern(n.pattern)
 		for index, part := range parts {
 			if part[0] == ':' {

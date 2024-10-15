@@ -1,15 +1,16 @@
 package test
 
 import (
-	"net/http"
+	"fmt"
+	"strings"
 	"testing"
-	"web"
 )
 
 func TestWeb(t *testing.T) {
-	r := web.New()
-	r.GET("/", func(c *web.Context) {
-		c.HTML(http.StatusOK, "<h1>Hello World</h1>")
-	})
-	r.Run(":8080")
+	pattern := "/web/example/run"
+	vs := strings.Split(pattern, "/")
+	fmt.Println(vs)
+	for _, item := range vs {
+		fmt.Print(item)
+	}
 }
