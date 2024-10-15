@@ -48,18 +48,20 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	r.handlers[key] = handler
 }
 
-// getRoute eg. /p/:lang/doc 给 lang 赋值
-// 返回值*node表示带有pattern的节点
-func (r *router) getRoute(method string, path string) (*node, map[string]string) {
+// getRoute 
+// 返回值*node表示带有pattern的节点，匹配失败时返回nil,nil
+// params eg. 注册 /p/:lang/doc 请求/p/122/doc 给 lang 赋值 122,
+// params eg. 注册 /p/*c 请求/p/hello/world 给 c 赋值 hello/world
+func (r *router) getRoute(method string, path string) (n *node, params map[string]string) {
 	root, ok := r.roots[method]
 
 	if !ok {
 		return nil, nil
 	}
 	searchParts := parsePattern(path)
-	params := make(map[string]string)
-	
-	n := root.search(searchParts, 0)
+	params = make(map[string]string)
+
+	n = root.search(searchParts, 0)
 
 	if n != nil {
 		// 实际注册的路由
