@@ -48,7 +48,7 @@ func (r *router) addRoute(method string, pattern string, handler HandlerFunc) {
 	r.handlers[key] = handler
 }
 
-// getRoute 
+// getRoute
 // 返回值*node表示带有pattern的节点，匹配失败时返回nil,nil
 // params eg. 注册 /p/:lang/doc 请求/p/122/doc 给 lang 赋值 122,
 // params eg. 注册 /p/*c 请求/p/hello/world 给 c 赋值 hello/world
@@ -83,11 +83,15 @@ func (r *router) getRoute(method string, path string) (n *node, params map[strin
 
 func (r *router) handle(c *Context) {
 	n, params := r.getRoute(c.Method, c.Path)
+
 	if n != nil {
-		c.Params = params
 		key := c.Method + "-" + n.pattern
-		r.handlers[key](c)
+		c.Params = params
+		c.handlers = append(c.handlers, r.handlers[key])
 	} else {
-		c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		c.handlers = append(c.handlers, func(c *Context) {
+			c.String(http.StatusNotFound, "404 NOT FOUND: %s\n", c.Path)
+		})
 	}
+	c.Next()
 }

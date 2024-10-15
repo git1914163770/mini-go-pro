@@ -18,6 +18,7 @@ func RunServer() {
 	// r.Run(":8080")
 
 	r := web.New()
+	r.Use(web.Logger())
 	r.GET("/index", func(c *web.Context) {
 		c.HTML(http.StatusOK, "<h1>Index Page</h1>")
 	})

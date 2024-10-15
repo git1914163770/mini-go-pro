@@ -3,6 +3,7 @@ package web
 import (
 	"log"
 	"net/http"
+	"strings"
 )
 
 type HandlerFunc func(*Context)
@@ -11,34 +12,39 @@ type HandlerFunc func(*Context)
 type RouterGroup struct {
 	prefix      string
 	middlewares []HandlerFunc
-	router      *router
+	server      *Server
 }
 
 // Server represents the main web server that manages RouterGroups and routes.
 type Server struct {
 	*RouterGroup
+	router *router
+	groups []*RouterGroup // store all groups
 }
 
 func New() *Server {
-	server := &Server{}
-	server.RouterGroup = &RouterGroup{router: newRouter()}
+	server := &Server{router: newRouter()}
+	server.RouterGroup = &RouterGroup{server: server}
+	server.groups = []*RouterGroup{server.RouterGroup}
 	return server
 }
 
 // Group is defined to create a new RouterGroup
 // remember all groups share the same Engine instance
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
+	server := group.server
 	newGroup := &RouterGroup{
 		prefix: group.prefix + prefix,
-		router: group.router,
+		server: server,
 	}
+	server.groups = append(server.groups, newGroup) // Add new group to the router
 	return newGroup
 }
 
 func (group *RouterGroup) addRoute(method string, comp string, handler HandlerFunc) {
 	pattern := group.prefix + comp
 	log.Printf("Route %4s - %s", method, pattern)
-	group.router.addRoute(method, pattern, handler)
+	group.server.router.addRoute(method, pattern, handler)
 }
 
 func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -48,8 +54,25 @@ func (server *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// } else {
 	// 	w.WriteHeader(http.StatusNotFound)
 	// }
+	// c := newContext(w, r)
+	// server.router.handle(c)
+
 	c := newContext(w, r)
+	c.handlers = server.getMiddlewares(r)
 	server.router.handle(c)
+}
+
+func (server *Server) getMiddlewares(r *http.Request) []HandlerFunc {
+	var middlewares []HandlerFunc
+
+	// Loop through all registered groups to find applicable middlewares
+	for _, group := range server.groups {
+		if strings.HasPrefix(r.URL.Path, group.prefix) {
+			middlewares = append(middlewares, group.middlewares...)
+		}
+	}
+
+	return middlewares
 }
 
 func (server *Server) Run(addr string) (err error) {
