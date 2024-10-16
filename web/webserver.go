@@ -29,6 +29,12 @@ func New() *Server {
 	return server
 }
 
+func Default() *Server {
+	server := New()
+	server.Use(Logger(),Recovery())
+	return server
+}
+
 // Group is defined to create a new RouterGroup
 // remember all groups share the same Engine instance
 func (group *RouterGroup) Group(prefix string) *RouterGroup {
@@ -89,6 +95,6 @@ func (group *RouterGroup) POST(pattern string, handler HandlerFunc) {
 }
 
 // Use registers middleware for the RouterGroup.
-func (group *RouterGroup) Use(middleware HandlerFunc) {
-	group.middlewares = append(group.middlewares, middleware)
+func (group *RouterGroup) Use(middleware ...HandlerFunc) {
+	group.middlewares = append(group.middlewares, middleware...)
 }
